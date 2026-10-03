@@ -6,11 +6,11 @@ import { AnalysisResult } from "@/lib/types";
 import { OverviewSection } from "./sections/OverviewSection";
 import { ArchitectureSection } from "./sections/ArchitectureSection";
 import { DocsSection } from "./sections/DocsSection";
-import { GoodFirstIssuesSection } from "./sections/GoodFirstIssuesSection";
+import { IssuesSection } from "./sections/IssuesSection";
 import { BugsSection } from "./sections/BugsSection";
-import { ReadmeScoreSection } from "./sections/ReadmeScoreSection";
 import { DependenciesSection } from "./sections/DependenciesSection";
-import { ContributorGuideSection } from "./sections/ContributorGuideSection";
+import { ReadmeSection } from "./sections/ReadmeSection";
+import { GuideSection } from "./sections/GuideSection";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import {
@@ -144,7 +144,7 @@ export function Dashboard({ result }: DashboardProps) {
 
       {/* Main Grid: Left Sticky Sidebar + Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-        {/* Left Sticky Sidebar (Mobile scrollable tabs) */}
+        {/* Left Sticky Sidebar */}
         <div className="lg:col-span-1 lg:sticky lg:top-24 space-y-1 bg-slate-900/40 p-2 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
           <div className="flex lg:flex-col overflow-x-auto gap-1 no-scrollbar p-1">
             {tabs.map((tab) => {
@@ -195,19 +195,19 @@ export function Dashboard({ result }: DashboardProps) {
             <DocsSection data={result.docs} error={errors.docs} />
           )}
           {activeTab === "goodFirstIssues" && (
-            <GoodFirstIssuesSection data={result.goodFirstIssues} error={errors.goodFirstIssues} />
+            <IssuesSection data={result.goodFirstIssues} error={errors.goodFirstIssues} />
           )}
           {activeTab === "bugs" && (
-            <BugsSection data={result.bugs} error={errors.bugs} />
+            <BugsSection data={result.bugs} repo={repo} error={errors.bugs} />
           )}
           {activeTab === "dependencies" && (
             <DependenciesSection data={result.dependencies} error={errors.dependencies} />
           )}
           {activeTab === "readme" && (
-            <ReadmeScoreSection data={result.readme} error={errors.readme} />
+            <ReadmeSection data={result.readme} error={errors.readme} />
           )}
           {activeTab === "contributorGuide" && (
-            <ContributorGuideSection data={result.contributorGuide} error={errors.contributorGuide} />
+            <GuideSection data={result.contributorGuide} error={errors.contributorGuide} />
           )}
         </div>
       </div>
