@@ -30,6 +30,10 @@ import {
   Package,
   FileText,
   Rocket,
+  Download,
+  CheckCircle2,
+  AlertTriangle,
+  Flame,
 } from "lucide-react";
 
 interface DashboardProps {
@@ -64,6 +68,114 @@ export function Dashboard({ result }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const { repo, errors } = result;
 
+  const outdatedDepsCount =
+    result.dependencies?.filter((d) => d.status === "major-behind" || d.status === "minor-behind").length || 0;
+  const highBugsCount = result.bugs?.filter((b) => b.severity === "high").length || 0;
+  const goodIssuesCount = result.goodFirstIssues?.length || 0;
+  const readmeScore = result.readme?.score ?? null;
+
+  const handleExportReport = () => {
+    let report = `# RepoLens Analysis Report: ${repo.owner}/${repo.name}\n\n`;
+    report += `**Repository:** ${repo.url}\n`;
+    report += `**Generated At:** ${new Date(result.generatedAt).toLocaleString()}\n`;
+    report += `**Stars:** ${repo.stars} | **Forks:** ${repo.forks} | **Open Issues:** ${repo.openIssues} | **License:** ${repo.license || "N/A"}\n\n`;
+    report += `---\n\n`;
+
+    if (result.overview) {
+      report += `## 1. Overview\n\n`;
+      report += `${result.overview.summary}\n\n`;
+      report += `**Purpose:** ${result.overview.purpose}\n\n`;
+      report += `**Tech Stack:** ${result.overview.techStack.join(", ")}\n\n`;
+      report += `### Key Features\n`;
+      result.overview.keyFeatures.forEach((f) => {
+        report += `- ${f}\n`;
+      });
+      report += `\n`;
+    }
+
+    if (result.architecture) {
+      report += `## 2. Architecture\n\n`;
+      report += `${result.architecture.summary}\n\n`;
+      report += `### Key Directories\n`;
+      result.architecture.folders.forEach((f) => {
+        report += `- \`${f.path}\`: ${f.purpose}\n`;
+      });
+      report += `\n### Execution Flow\n`;
+      result.architecture.flow.forEach((step, i) => {
+        report += `${i + 1}. ${step}\n`;
+      });
+      if (result.architecture.mermaid) {
+        report += `\n\`\`\`mermaid\n${result.architecture.mermaid}\n\`\`\`\n\n`;
+      }
+    }
+
+    if (result.docs && result.docs.length > 0) {
+      report += `## 3. Documentation\n\n`;
+      result.docs.forEach((doc) => {
+        report += `### ${doc.title}\n\n${doc.markdown}\n\n`;
+      });
+    }
+
+    if (result.goodFirstIssues && result.goodFirstIssues.length > 0) {
+      report += `## 4. Good First Issues\n\n`;
+      result.goodFirstIssues.forEach((issue) => {
+        report += `### ${issue.title} [${issue.difficulty.toUpperCase()}]\n`;
+        report += `**Why start here:** ${issue.why}\n`;
+        report += `**Files to touch:** ${issue.filesToTouch.map((f) => `\`${f}\``).join(", ")}\n`;
+        report += `**Steps:**\n`;
+        issue.steps.forEach((s, idx) => {
+          report += `  ${idx + 1}. ${s}\n`;
+        });
+        report += `\n`;
+      });
+    }
+
+    if (result.bugs && result.bugs.length > 0) {
+      report += `## 5. Bug & Code Quality Findings\n\n`;
+      result.bugs.forEach((b) => {
+        report += `### [${b.severity.toUpperCase()}] ${b.title}\n`;
+        report += `**Location:** \`${b.file}\`${b.line ? `:${b.line}` : ""}\n`;
+        report += `**Description:** ${b.description}\n`;
+        report += `**Suggested Fix:** ${b.suggestedFix}\n\n`;
+      });
+    }
+
+    if (result.dependencies && result.dependencies.length > 0) {
+      report += `## 6. Dependencies Audit\n\n`;
+      result.dependencies.forEach((d) => {
+        report += `- **${d.name}**: current \`${d.current}\`, latest \`${d.latest || "unknown"}\` [${d.status}]\n`;
+      });
+      report += `\n`;
+    }
+
+    if (result.readme) {
+      report += `## 7. README Score: ${result.readme.score}/100\n\n`;
+      report += `### Suggestions\n`;
+      result.readme.suggestions.forEach((s) => {
+        report += `- ${s}\n`;
+      });
+      report += `\n### Improved Snippet\n\`\`\`markdown\n${result.readme.improvedSnippet}\n\`\`\`\n\n`;
+    }
+
+    if (result.contributorGuide) {
+      report += `## 8. Contributor Guide\n\n`;
+      report += `### Prerequisites\n`;
+      result.contributorGuide.prerequisites.forEach((p) => (report += `- ${p}\n`));
+      report += `\n### Setup Steps\n\`\`\`bash\n${result.contributorGuide.setupSteps.join("\n")}\n\`\`\`\n\n`;
+      report += `### Test Commands\n\`\`\`bash\n${result.contributorGuide.runTests.join("\n")}\n\`\`\`\n\n`;
+    }
+
+    const blob = new Blob([report], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `repolens-${repo.owner}-${repo.name}-report.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const tabs: { key: TabKey; label: string; icon: any; count?: number | string | null }[] = [
     { key: "overview", label: "Overview", icon: LayoutDashboard },
     { key: "architecture", label: "Architecture", icon: Workflow },
@@ -76,7 +188,7 @@ export function Dashboard({ result }: DashboardProps) {
   ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 pb-16 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 pb-16 space-y-6">
       {/* Header Card */}
       <Card hoverEffect className="p-6 md:p-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -130,10 +242,19 @@ export function Dashboard({ result }: DashboardProps) {
             </div>
           </div>
 
-          <div className="shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={handleExportReport}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-md"
+              title="Download consolidated Markdown report"
+            >
+              <Download className="w-4 h-4 text-emerald-400" />
+              <span>Export Report</span>
+            </button>
+
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-md"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-all border border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-md"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Analyze Another</span>
@@ -141,6 +262,69 @@ export function Dashboard({ result }: DashboardProps) {
           </div>
         </div>
       </Card>
+
+      {/* Contribution Readiness Summary Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button
+          onClick={() => setActiveTab("readme")}
+          className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-indigo-500/50 hover:bg-slate-900 transition-all text-left flex items-center justify-between group"
+        >
+          <div>
+            <div className="text-[11px] font-medium text-slate-400">README Score</div>
+            <div className="text-lg font-extrabold text-white group-hover:text-indigo-400 transition-colors">
+              {readmeScore !== null ? `${readmeScore}%` : "N/A"}
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("goodFirstIssues")}
+          className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-emerald-500/50 hover:bg-slate-900 transition-all text-left flex items-center justify-between group"
+        >
+          <div>
+            <div className="text-[11px] font-medium text-slate-400">Starter Issues</div>
+            <div className="text-lg font-extrabold text-white group-hover:text-emerald-400 transition-colors">
+              {goodIssuesCount}
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <Target className="w-4 h-4" />
+          </div>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("dependencies")}
+          className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-amber-500/50 hover:bg-slate-900 transition-all text-left flex items-center justify-between group"
+        >
+          <div>
+            <div className="text-[11px] font-medium text-slate-400">Outdated Deps</div>
+            <div className="text-lg font-extrabold text-white group-hover:text-amber-400 transition-colors">
+              {outdatedDepsCount}
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <AlertTriangle className="w-4 h-4" />
+          </div>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("bugs")}
+          className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-rose-500/50 hover:bg-slate-900 transition-all text-left flex items-center justify-between group"
+        >
+          <div>
+            <div className="text-[11px] font-medium text-slate-400">High Severity Bugs</div>
+            <div className="text-lg font-extrabold text-white group-hover:text-rose-400 transition-colors">
+              {highBugsCount}
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
+            <Flame className="w-4 h-4" />
+          </div>
+        </button>
+      </div>
 
       {/* Main Grid: Left Sticky Sidebar + Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
