@@ -41,6 +41,8 @@ export function parseRepoUrl(inputUrl: string): { owner: string; name: string } 
     if (trimmed.toLowerCase() === "demo") {
       return { owner: "expressjs", name: "express" };
     }
+    // Remove query string and fragment/hashes
+    trimmed = trimmed.split("?")[0].split("#")[0].replace(/\/$/, "");
     // Remove protocol and domain
     trimmed = trimmed.replace(/^(?:https?:\/\/)?(?:www\.)?github\.com\//i, "");
     // Remove .git suffix

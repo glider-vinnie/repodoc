@@ -52,6 +52,9 @@ export default function Home() {
       return;
     }
 
+    // Clean query parameters and hashes
+    trimmed = trimmed.split("?")[0].split("#")[0].replace(/\/$/, "");
+
     // Clean leading https://github.com/
     if (trimmed.startsWith("https://github.com/")) {
       trimmed = trimmed.replace("https://github.com/", "");
