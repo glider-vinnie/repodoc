@@ -17,6 +17,9 @@ export function OverviewSection({ data, repo, error }: OverviewSectionProps) {
     return <SectionError title="Overview Analysis Unavailable" error={error} />;
   }
 
+  const techStack = data.techStack || [];
+  const keyFeatures = data.keyFeatures || [];
+
   return (
     <div className="space-y-6">
       {/* Summary Card */}
@@ -25,11 +28,11 @@ export function OverviewSection({ data, repo, error }: OverviewSectionProps) {
           <Sparkles className="w-4 h-4" />
           <span>Executive Summary</span>
         </div>
-        <p className="text-slate-200 text-sm leading-relaxed font-medium">{data.summary}</p>
+        <p className="text-slate-200 text-sm leading-relaxed font-medium">{data.summary || "Summary unavailable."}</p>
         
         <div className="mt-6 pt-6 border-t border-slate-800/80">
           <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Core Mission & Purpose</h4>
-          <p className="text-slate-300 text-sm leading-relaxed">{data.purpose}</p>
+          <p className="text-slate-300 text-sm leading-relaxed">{data.purpose || "Purpose description unavailable."}</p>
         </div>
       </Card>
 
@@ -41,14 +44,18 @@ export function OverviewSection({ data, repo, error }: OverviewSectionProps) {
             <span>Tech Stack & Languages</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {data.techStack.map((tech, idx) => (
-              <span
-                key={idx}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
-              >
-                {tech}
-              </span>
-            ))}
+            {techStack.length > 0 ? (
+              techStack.map((tech, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                >
+                  {tech}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-slate-400">No tech stack specified</span>
+            )}
           </div>
         </Card>
 
@@ -58,14 +65,18 @@ export function OverviewSection({ data, repo, error }: OverviewSectionProps) {
             <Layers className="w-4 h-4" />
             <span>Key Features & Architecture Highlights</span>
           </div>
-          <ul className="space-y-2.5">
-            {data.keyFeatures.map((feat, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>{feat}</span>
-              </li>
-            ))}
-          </ul>
+          {keyFeatures.length > 0 ? (
+            <ul className="space-y-2.5">
+              {keyFeatures.map((feat, idx) => (
+                <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>{feat}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-slate-400">No key features listed.</p>
+          )}
         </Card>
       </div>
     </div>

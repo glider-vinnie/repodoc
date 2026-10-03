@@ -21,6 +21,7 @@ export function LoadingSteps({ onComplete }: LoadingStepsProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
+    // Advance steps on a timer every ~6 seconds as specified
     const timer = setInterval(() => {
       setCurrentStep((prev) => {
         if (prev < STEPS.length - 1) {
@@ -31,7 +32,7 @@ export function LoadingSteps({ onComplete }: LoadingStepsProps) {
           return prev;
         }
       });
-    }, 600);
+    }, 6000);
 
     return () => clearInterval(timer);
   }, [onComplete]);

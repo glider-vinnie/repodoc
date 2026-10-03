@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mockResult } from "@/lib/mock";
+import { analyzeRepository } from "@/lib/analyzer";
 
 export const maxDuration = 60;
 
@@ -17,7 +17,10 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json(mockResult, { status: 200 });
+    console.log(`[api/analyze] Triggering analysis for URL: ${repoUrl}`);
+    const result = await analyzeRepository(repoUrl);
+
+    return NextResponse.json(result, { status: 200 });
   } catch (err: any) {
     console.log("[api/analyze] Exception in POST handler:", err);
     return NextResponse.json(
